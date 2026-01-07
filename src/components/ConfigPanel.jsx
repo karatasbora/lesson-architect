@@ -36,9 +36,11 @@ export default function ConfigPanel({
                 <div className="input-group">
                     <label>Model</label>
                     <select value={model} onChange={e => setModel(e.target.value)}>
-                        <option value="gemini-2.0-flash">Gemini 2.0 Flash (Preview)</option>
-                        <option value="gemini-1.5-flash">Gemini 1.5 Flash (Stable)</option>
-                        <option value="gemini-1.5-pro">Gemini 1.5 Pro (Best Quality)</option>
+                        <option value="gemini-2.5-flash">Gemini 2.5 Flash (New Stable)</option>
+                        <option value="gemini-2.5-pro">Gemini 2.5 Pro (High Quality)</option>
+                        <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+                        <option value="gemini-flash-latest">Gemini Flash Latest</option>
+                        <option value="gemini-pro-latest">Gemini Pro Latest</option>
                     </select>
                 </div>
                 <div className="input-group">

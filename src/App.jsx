@@ -20,7 +20,7 @@ export default function App() {
   const [audience, setAudience] = useState('adults');
   const [visualStyle, setVisualStyle] = useState('minimal vector line art');
   const [mascotPref, setMascotPref] = useState('');
-  const [model, setModel] = useState('gemini-2.0-flash');
+  const [model, setModel] = useState('gemini-flash-latest');
   const [loading, setLoading] = useState(false);
 
   // Data State

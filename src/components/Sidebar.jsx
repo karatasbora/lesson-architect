@@ -4,9 +4,12 @@ import { Trash2 } from 'lucide-react';
 export default function Sidebar({ apiKey, setApiKey, history, loadFromHistory, clearHistory }) {
     return (
         <aside className="sidebar">
-            {/* Brand */}
             <div className="brand">
-                <img src="./assets/arc.svg" alt="arc" style={{ width: '32px', height: '32px' }} />
+                <img
+                    src="/arc.svg"
+                    alt="arc"
+                    style={{ width: '32px', height: '32px' }}
+                />
                 <span style={{ fontSize: '1.5rem', letterSpacing: '-0.04em', fontWeight: 600 }}>arc</span>
             </div>
 

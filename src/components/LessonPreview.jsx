@@ -16,13 +16,10 @@ export default function LessonPreview({ activity, mascotUrl, isScaffolded, onDow
     if (!activity) {
         return (
             <div className="preview-panel">
-                <div style={{
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                    height: '100%', opacity: 0.6, color: '#a1a1aa'
-                }}>
-                    <div style={{
+                <div className="flex-column-center" style={{ height: '100%', opacity: 0.6, color: '#a1a1aa' }}>
+                    <div className="flex-column-center shadow-soft" style={{
                         background: 'white', padding: '30px', borderRadius: '50%',
-                        boxShadow: '0 20px 40px -10px rgba(0,0,0,0.05)', marginBottom: '20px'
+                        marginBottom: '20px'
                     }}>
                         <Palette size={48} strokeWidth={1} color="#000" />
                     </div>
@@ -42,7 +39,26 @@ export default function LessonPreview({ activity, mascotUrl, isScaffolded, onDow
                 <div style={{ marginBottom: '40px', borderBottom: '1px solid #e4e4e7', paddingBottom: '20px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
                         <div>
-                            <h1 style={{ margin: 0, fontSize: '2rem', letterSpacing: '-0.03em' }}>{activity.title}</h1>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <h1 style={{ margin: 0, fontSize: '2rem', letterSpacing: '-0.03em' }}>{activity.title}</h1>
+
+                                <button onClick={onDownload} className="download-btn" style={{
+                                    background: 'transparent',
+                                    border: '1px solid #e4e4e7',
+                                    color: '#09090b',
+                                    padding: '6px 10px',
+                                    borderRadius: '6px',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                    fontSize: '0.8rem',
+                                    fontWeight: 500
+                                }} title="Export as PDF">
+                                    <Download size={14} /> <span>PDF</span>
+                                </button>
+                            </div>
+
                             <div style={{ marginTop: '10px', display: 'flex', gap: '10px', color: '#71717a', fontSize: '0.8rem', fontWeight: 600 }}>
                                 <span style={{ border: '1px solid #e4e4e7', padding: '2px 8px', borderRadius: '4px' }}>{activity.meta?.level}</span>
                                 <span style={{ border: '1px solid #e4e4e7', padding: '2px 8px', borderRadius: '4px' }}>{activity.meta?.type?.toUpperCase()}</span>
@@ -109,14 +125,8 @@ export default function LessonPreview({ activity, mascotUrl, isScaffolded, onDow
                     })}
                 </div>
 
-                <button onClick={onDownload} className="download-btn" style={{
-                    marginTop: '40px', width: '100%', padding: '16px',
-                    background: '#09090b', color: 'white', border: 'none', borderRadius: '8px',
-                    fontWeight: 600, cursor: 'pointer', display: 'flex', justifyContent: 'center', gap: '10px'
-                }}>
-                    <Download size={18} /> Export as PDF
-                </button>
             </div>
         </div>
+
     );
 }

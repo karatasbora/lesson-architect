@@ -175,19 +175,6 @@ export default function App() {
         />
       </main>
 
-      <style>{`
-        /* Badge Styles Helper */
-        .badge-zinc {
-          background-color: #f4f4f5; color: #18181b; border: 1px solid #e4e4e7;
-          font-size: 0.65rem; font-weight: 600; padding: 2px 8px; border-radius: 99px;
-          display: flex; align-items: center; gap: 4px; text-transform: uppercase; letter-spacing: 0.05em;
-        }
-        .badge-detail {
-          background-color: white; color: #a1a1aa; border: 1px solid #f4f4f5;
-          font-size: 0.65rem; font-weight: 600; padding: 2px 8px; border-radius: 99px;
-          display: flex; align-items: center; gap: 4px; text-transform: uppercase;
-        }
-      `}</style>
     </div>
   );
 }

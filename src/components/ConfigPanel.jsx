@@ -138,14 +138,7 @@ export default function ConfigPanel({
                 )}
             </button>
 
-            <style>{`
-                .section-divider {
-                    display: flex; align-items: center; gap: 6px;
-                    font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
-                    color: #a1a1aa; margin-top: 15px; margin-bottom: 8px;
-                    border-bottom: 1px solid #f4f4f5; padding-bottom: 4px;
-                }
-            `}</style>
+
         </div>
     );
 }

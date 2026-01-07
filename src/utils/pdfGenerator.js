@@ -15,6 +15,16 @@ const getBase64FromUrl = async (url) => {
     }
 };
 
+const getCategoryBadge = (text) => {
+    if (!text) return { label: "DETAIL", color: [161, 161, 170] }; // Zinc-400
+    const lower = text.toLowerCase();
+    if (lower.includes('where') || lower.includes('place')) return { label: "LOCATION", color: [24, 24, 27] }; // Zinc-950
+    if (lower.includes('who')) return { label: "CHARACTER", color: [24, 24, 27] };
+    if (lower.includes('what') && (lower.includes('eat') || lower.includes('food'))) return { label: "FOOD", color: [24, 24, 27] };
+    if (lower.includes('when') || lower.includes('time')) return { label: "TIME", color: [24, 24, 27] };
+    return { label: "DETAIL", color: [161, 161, 170] };
+};
+
 export const generatePDF = async (activity, mascotUrl, isScaffolded) => {
     if (!activity) return;
     const doc = new jsPDF();
@@ -123,14 +133,28 @@ export const generatePDF = async (activity, mascotUrl, isScaffolded) => {
     activity.student_worksheet.questions.forEach((q, i) => {
         doc.setFontSize(11);
         const qLines = doc.splitTextToSize(`${i + 1}. ${q.question_text}`, mainW);
-        let boxH = (qLines.length * 6) + 10;
+        let boxH = (qLines.length * 6) + 20; // Increased spacing for badge
         if (q.options) boxH += (q.options.length * 7) + 5;
         else boxH += 15;
 
         checkSpace(boxH);
 
+        // Badge
+        const badge = getCategoryBadge(q.question_text);
+        doc.setFontSize(7);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(...badge.color);
+        doc.text(badge.label, Qm, cursorY);
+
+        // Icon emulation (small dot)
+        doc.setFillColor(...badge.color);
+        doc.circle(Qm - 3, cursorY - 1, 1, 'F');
+
+        cursorY += 5;
+
         doc.setTextColor(...blackRGB);
         doc.setFont("helvetica", "bold");
+        doc.setFontSize(11);
         doc.text(qLines, Qm, cursorY);
 
         let localY = cursorY + (qLines.length * 5) + 4;

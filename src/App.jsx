@@ -10,6 +10,8 @@ import {
 
 // --- CUSTOM BRAND ASSETS ---
 
+// Custom Brand Asset: "The Bridge Arc"
+// Represents: Stability, Connection, and Scaffolding.
 const ArcLogo = () => (
   <svg
     width="28"
@@ -19,17 +21,20 @@ const ArcLogo = () => (
     xmlns="http://www.w3.org/2000/svg"
     style={{ display: 'block' }}
   >
-    <defs>
-      <linearGradient id="arc-gradient" x1="0" y1="32" x2="32" y2="0" gradientUnits="userSpaceOnUse">
-        <stop stopColor="currentColor" />
-        <stop offset="1" stopColor="currentColor" stopOpacity="0.4" />
-      </linearGradient>
-    </defs>
+    {/* A thick, structural parabolic arch. 
+      strokeWidth="3.5" gives it a "heavy" architectural feel.
+      strokeLinecap="round" keeps it modern and friendly.
+    */}
     <path
-      d="M4 28 C 12 28, 18 22, 28 4 L 24 4 C 16 20, 10 24, 4 24 Z"
-      fill="url(#arc-gradient)"
+      d="M3 27 C 3 8, 29 8, 29 27"
+      stroke="currentColor"
+      strokeWidth="3.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
     />
-    <circle cx="26" cy="6" r="1.5" fill="currentColor" opacity="0.4" />
+
+    {/* Optional: A small "keystone" or joint at the apex to emphasize 'construction' */}
+    {/* <circle cx="16" cy="8" r="1.5" fill="currentColor" /> */}
   </svg>
 );
 

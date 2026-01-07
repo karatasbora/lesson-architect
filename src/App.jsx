@@ -154,7 +154,7 @@ export default function App() {
     }
   };
 
-  // --- ROBUST MODERN PDF ENGINE ---
+  // --- ROBUST MODERN PDF ENGINE (FIXED) ---
   const downloadPDF = async () => {
     if (!activity) return;
     const doc = new jsPDF();
@@ -263,7 +263,8 @@ export default function App() {
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(...slate500);
-    doc.text("Name: __________________________", aq + 10, cursorY);
+    // FIXED TYPO HERE: Changed 'aq + 10' to 'margin + 10'
+    doc.text("Name: __________________________", margin + 10, cursorY);
     doc.text("Date: __________________________", width / 2, cursorY);
     cursorY += 20;
 

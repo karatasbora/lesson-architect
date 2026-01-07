@@ -2,11 +2,14 @@ import React from 'react';
 import { Trash2 } from 'lucide-react';
 
 export default function Sidebar({ apiKey, setApiKey, history, loadFromHistory, clearHistory }) {
+    // Determine the base URL for assets (handles the 'base: /arc/' config)
+    const baseUrl = import.meta.env.BASE_URL;
+
     return (
         <aside className="sidebar">
             <div className="brand">
                 <img
-                    src="/arc.svg"
+                    src={`${baseUrl}arc.svg`}
                     alt="arc"
                     style={{ width: '32px', height: '32px' }}
                 />

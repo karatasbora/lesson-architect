@@ -10,31 +10,37 @@ import {
 
 // --- CUSTOM BRAND ASSETS ---
 
-// Custom Brand Asset: "The Bridge Arc"
-// Represents: Stability, Connection, and Scaffolding.
+// Updated Logo: "The Infinite Bridge"
+// Symbolizes: Strong scaffolding (wide base) leading to a future goal (vanishing point).
 const ArcLogo = () => (
   <svg
-    width="28"
-    height="28"
+    width="32"
+    height="32"
     viewBox="0 0 32 32"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
     style={{ display: 'block' }}
   >
-    {/* A thick, structural parabolic arch. 
-      strokeWidth="3.5" gives it a "heavy" architectural feel.
-      strokeLinecap="round" keeps it modern and friendly.
+    <defs>
+      {/* Gradient emphasizes the transition from 'Now' (Solid) to 'Future' (Ethereal) */}
+      <linearGradient id="bridge-gradient" x1="0" y1="32" x2="32" y2="0" gradientUnits="userSpaceOnUse">
+        <stop stopColor="currentColor" stopOpacity="1" />
+        <stop offset="1" stopColor="currentColor" stopOpacity="0.5" />
+      </linearGradient>
+    </defs>
+
+    {/* Geometry: A 3D-like arch path.
+      - Starts wide at the bottom-left (4,30) to (12,30) -> The Foundation.
+      - Curves sharply upward and inward.
+      - Converges to a single point at top-right (28,4) -> The Infinite Future.
     */}
     <path
-      d="M3 27 C 3 8, 29 8, 29 27"
-      stroke="currentColor"
-      strokeWidth="3.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
+      d="M4 30 L12 30 C 18 20, 24 10, 28 4 C 20 8, 10 16, 4 30 Z"
+      fill="url(#bridge-gradient)"
     />
 
-    {/* Optional: A small "keystone" or joint at the apex to emphasize 'construction' */}
-    {/* <circle cx="16" cy="8" r="1.5" fill="currentColor" /> */}
+    {/* Optional: A subtle 'keystone' line to emphasize structure */}
+    <path d="M10 24 L14 22" stroke="white" strokeWidth="1" strokeOpacity="0.3" />
   </svg>
 );
 
@@ -90,7 +96,6 @@ export default function App() {
 
   // Visual Assets
   const [mascotUrl, setMascotUrl] = useState(null);
-  // Default to monochrome/zinc theme
   const [themeColors, setThemeColors] = useState({ primary: '#09090b', accent: '#71717a' });
 
   // Load History Safely
@@ -157,7 +162,7 @@ export default function App() {
 
     try {
       const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" }); // Updated to latest model
+      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
       let typePrompt = "";
       switch (activityType) {
@@ -209,7 +214,6 @@ export default function App() {
       if (!data.student_worksheet) throw new Error("Invalid AI response structure");
 
       setActivity(data);
-      // Enforce the monochrome aesthetic for the UI, but keep the data color for the PDF accent
       setThemeColors({ primary: '#09090b', accent: data.visual_theme?.primary_color || '#4f46e5' });
 
       // Image Gen (Minimalist/Vector style)
@@ -232,7 +236,7 @@ export default function App() {
     const doc = new jsPDF();
     const width = doc.internal.pageSize.getWidth();
     const height = doc.internal.pageSize.getHeight();
-    const margin = 20; // More breathing room
+    const margin = 20;
 
     // Layout
     const sidebarW = (width - (margin * 2)) * 0.30;
@@ -246,7 +250,6 @@ export default function App() {
     };
 
     // PDF uses the generated accent color for subtle highlights, but Black for main text
-    const accentRGB = hexToRgb(themeColors.accent);
     const blackRGB = [9, 9, 11]; // Zinc-950
     const grayRGB = [113, 113, 122]; // Zinc-500
 
@@ -261,7 +264,6 @@ export default function App() {
     };
 
     const drawSidebar = () => {
-      // Minimalist Sidebar (No background fill, just clean layout)
       let sideY = 55;
 
       if (activity.student_worksheet.glossary && activity.student_worksheet.glossary.length > 0) {
@@ -349,7 +351,7 @@ export default function App() {
       checkSpace(boxH);
 
       doc.setTextColor(...blackRGB);
-      doc.setFont("helvetica", "bold"); // Bold questions for contrast
+      doc.setFont("helvetica", "bold");
       doc.text(qLines, margin, cursorY);
 
       let localY = cursorY + (qLines.length * 5) + 4;

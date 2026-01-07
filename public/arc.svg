@@ -1,10 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <svg width="28" height="28" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block;">
-  <defs>
-    <linearGradient id="arc-grad" x1="0" y1="32" x2="32" y2="0" gradientUnits="userSpaceOnUse">
-      <stop stopColor="currentColor" />
-      <stop offset="1" stopColor="currentColor" stopOpacity="0.4" />
-    </linearGradient>
-  </defs>
-  <path d="M4 28c8 0 14-6 24-24l-4 0c-8 16-14 20-20 20z" fill="url(#arc-grad)" />
-  <circle cx="26" cy="6" r="1.5" fill="currentColor" opacity="0.4" />
+  <path style="stroke: rgb(0, 0, 0); vector-effect: non-scaling-stroke; stroke-width: 0px; fill: rgb(9, 9, 11);" d="M 29.157 7.334 C 19.849 -2.873 5.314 6.426 1.491 29.737 C 1.525 29.74 8.008 21.517 8.021 21.457 C 10.16 11.879 17.483 -0.662 29.157 7.334 Z"/>
 </svg>

@@ -4,7 +4,7 @@ import { jsPDF } from "jspdf";
 import {
   Layout, Sparkles, Trash2, ToggleLeft, ToggleRight,
   Printer, Image as ImageIcon, Lightbulb, MapPin,
-  Clock, User, HelpCircle, Utensils, Download, AlertTriangle
+  Clock, User, HelpCircle, Utensils, Download, AlertTriangle, Palette
 } from 'lucide-react';
 
 // --- HELPERS ---

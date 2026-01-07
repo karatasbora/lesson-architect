@@ -2,10 +2,21 @@ import React, { useState, useEffect } from 'react';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { jsPDF } from "jspdf";
 import {
-  Layout, Download, Sparkles, History,
-  Trash2, ChevronRight, Settings, BookOpen,
-  ToggleLeft, ToggleRight, FileText
+  Layout, Download, Sparkles, Trash2,
+  Settings, BookOpen, ToggleLeft, ToggleRight,
+  FileText, Palette, Printer, Image as ImageIcon
 } from 'lucide-react';
+
+// Helper to convert URL to Base64 for PDF embedding
+const getBase64FromUrl = async (url) => {
+  const data = await fetch(url);
+  const blob = await data.blob();
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(blob);
+    reader.onloadend = () => resolve(reader.result);
+  });
+};
 
 export default function App() {
   // --- STATE ---
@@ -16,13 +27,15 @@ export default function App() {
   const [isScaffolded, setIsScaffolded] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // The "Active" Lesson
+  // The Data
   const [activity, setActivity] = useState(null);
-
-  // History System
   const [history, setHistory] = useState([]);
 
-  // Load History on Mount
+  // Visual Assets State
+  const [mascotUrl, setMascotUrl] = useState(null);
+  const [themeColors, setThemeColors] = useState({ primary: '#4f46e5', accent: '#10b981' });
+
+  // Load History
   useEffect(() => {
     const saved = JSON.parse(localStorage.getItem('lesson_history') || '[]');
     setHistory(saved);
@@ -34,12 +47,12 @@ export default function App() {
   }, [apiKey]);
 
   // --- ACTIONS ---
-
-  const addToHistory = (newActivity) => {
+  const addToHistory = (newActivity, visualData) => {
     const newEntry = {
       id: Date.now(),
       date: new Date().toLocaleDateString(),
-      ...newActivity
+      ...newActivity,
+      visuals: visualData
     };
     const updated = [newEntry, ...history];
     setHistory(updated);
@@ -48,7 +61,10 @@ export default function App() {
 
   const loadFromHistory = (item) => {
     setActivity(item);
-    // Optional: Restore configuration too
+    if (item.visuals) {
+      setMascotUrl(item.visuals.mascotUrl);
+      setThemeColors(item.visuals.themeColors);
+    }
     if (item.meta) {
       setCefrLevel(item.meta.level);
       setActivityType(item.meta.type);
@@ -62,16 +78,17 @@ export default function App() {
     }
   };
 
-  // --- AI GENERATION ---
+  // --- AI ENGINE ---
   const generateActivity = async () => {
     if (!apiKey) return alert("Please enter API Key");
     setLoading(true);
+    setActivity(null);
+    setMascotUrl(null); // Reset image
 
     try {
       const genAI = new GoogleGenerativeAI(apiKey);
       const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-      // PROMPT LOGIC (Same robust logic as v2.0)
       let typePrompt = "";
       switch (activityType) {
         case 'vocabulary': typePrompt = "FOCUS: VOCABULARY. Extract 8-10 difficult words. Create matching questions."; break;
@@ -86,14 +103,24 @@ export default function App() {
         : "SCAFFOLDING: OFF. Standard.";
 
       const prompt = `
-        You are a Lesson Architect.
+        You are a Visual Lesson Architect.
         TEXT: "${transcript}"
         CONFIG: ${typePrompt} | Level: ${cefrLevel} | ${scaffoldPrompt}
+        
+        TASK:
+        1. Create the lesson content.
+        2. DESIGN A VISUAL THEME based on the story. 
+           - Pick a "primary_color" hex code (e.g. #009246 for Italy).
+           - Write a "mascot_prompt": A description for an AI image generator to create a cute header illustration (e.g. "Cartoon pig eating pizza in Rome vector art").
         
         OUTPUT JSON ONLY:
         {
           "title": "Title",
           "meta": { "level": "${cefrLevel}", "type": "${activityType}", "duration": "20m" },
+          "visual_theme": {
+            "primary_color": "#hexcode",
+            "mascot_prompt": "description of illustration"
+          },
           "teacher_guide": { "rationale": "...", "key_answers": ["..."] },
           "student_worksheet": {
             "instructions": "...",
@@ -110,7 +137,15 @@ export default function App() {
       const data = JSON.parse(text);
 
       setActivity(data);
-      addToHistory(data); // Auto-save!
+      setThemeColors({ primary: data.visual_theme.primary_color, accent: '#4b5563' });
+
+      // --- GENERATE IMAGE ---
+      // We use Pollinations.ai (Free, No Key) with the prompt from Gemini
+      const promptEncoded = encodeURIComponent(data.visual_theme.mascot_prompt + " white background, high quality, vector style, flat illustration");
+      const imageUrl = `https://image.pollinations.ai/prompt/${promptEncoded}?width=400&height=400&nologo=true&seed=${Math.floor(Math.random() * 1000)}`;
+
+      setMascotUrl(imageUrl);
+      addToHistory(data, { mascotUrl: imageUrl, themeColors: { primary: data.visual_theme.primary_color } });
 
     } catch (err) {
       alert("Error: " + err.message);
@@ -119,40 +154,25 @@ export default function App() {
     }
   };
 
-  // --- PRO PDF ENGINE ---
-  const downloadPDF = () => {
+  // --- PDF ENGINE WITH IMAGES ---
+  const downloadPDF = async () => {
     if (!activity) return;
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     const margin = 20;
 
-    // Brand Colors (Indigo & Emerald Theme)
-    const primaryColor = [79, 70, 229];   // #4f46e5
-    const secondaryColor = [243, 244, 246]; // #f3f4f6 (Light Gray)
-    const accentColor = [16, 185, 129];     // #10b981 (Green for hints)
+    // Convert Colors
+    const hexToRgb = (hex) => {
+      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      return result ? [parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16)] : [0, 0, 0];
+    };
+    const primaryRGB = hexToRgb(themeColors.primary);
 
-    // Helper: Page State
     let y = 0;
     let pageNo = 1;
 
-    // Helper: Add Footer (Page Numbers)
-    const addFooters = () => {
-      const totalPages = doc.internal.getNumberOfPages();
-      for (let i = 1; i <= totalPages; i++) {
-        doc.setPage(i);
-        doc.setFontSize(8);
-        doc.setTextColor(150);
-        doc.text(
-          `Page ${i} of ${totalPages}  |  Generated by LessonArchitect AI`,
-          pageWidth / 2,
-          pageHeight - 10,
-          { align: 'center' }
-        );
-      }
-    };
-
-    // Helper: Check for Page Break
+    // Helper: Page Break
     const checkSpace = (heightNeeded) => {
       if (y + heightNeeded > pageHeight - margin) {
         doc.addPage();
@@ -161,250 +181,167 @@ export default function App() {
       }
     };
 
-    // ==========================================
-    // PAGE 1: STUDENT WORKSHEET
-    // ==========================================
+    // --- PAGE 1 ---
 
-    // 1. HEADER BANNER
-    doc.setFillColor(...primaryColor);
-    doc.rect(0, 0, pageWidth, 40, 'F'); // Full width indigo bar
+    // Header Block
+    doc.setFillColor(...primaryRGB);
+    doc.rect(0, 0, pageWidth, 50, 'F'); // Taller header for image
 
-    // Title (White Text)
+    // Title
     doc.setTextColor(255, 255, 255);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(22);
-    doc.text(activity.title, margin, 22);
+    const titleLines = doc.splitTextToSize(activity.title, pageWidth - margin - 60); // Leave room for image
+    doc.text(titleLines, margin, 25);
 
-    // Meta Subtitle
+    // Meta
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    doc.setTextColor(224, 231, 255); // Light indigo text
-    doc.text(`${activity.meta.level}  •  ${activity.meta.type.toUpperCase()}  •  ${activity.meta.duration}`, margin, 32);
+    doc.text(`${activity.meta.level}  •  ${activity.meta.type.toUpperCase()}`, margin, 25 + (titleLines.length * 8));
 
-    y = 55;
+    // EMBED MASCOT IMAGE
+    if (mascotUrl) {
+      try {
+        const base64Img = await getBase64FromUrl(mascotUrl);
+        // Add image to top right
+        doc.addImage(base64Img, 'JPEG', pageWidth - 50, 5, 40, 40);
+      } catch (e) {
+        console.error("Could not load image for PDF", e);
+      }
+    }
 
-    // 2. STUDENT DETAILS (Name/Date)
-    doc.setDrawColor(200);
-    doc.setLineWidth(0.5);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(10);
-    doc.setTextColor(80);
+    y = 65;
 
-    doc.text("NAME:", margin, y);
-    doc.line(margin + 15, y, margin + 85, y); // Name Line
-
-    doc.text("DATE:", margin + 95, y);
-    doc.line(margin + 110, y, pageWidth - margin, y); // Date Line
-    y += 20;
-
-    // 3. INSTRUCTIONS BOX
-    doc.setFillColor(...secondaryColor);
-    doc.roundedRect(margin, y, pageWidth - (margin * 2), 20, 3, 3, 'F'); // Rounded gray box
-
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(10);
-    doc.setTextColor(...primaryColor);
-    doc.text("INSTRUCTIONS:", margin + 5, y + 8);
-
-    doc.setFont("helvetica", "normal");
+    // Student Info
     doc.setTextColor(0);
-    // Handle long instructions wrapping
-    const instLines = doc.splitTextToSize(activity.student_worksheet.instructions, pageWidth - margin * 2 - 50);
-    doc.text(instLines, margin + 40, y + 8);
-    y += 35;
+    doc.setFontSize(10);
+    doc.text("NAME: _________________________________", margin, y);
+    doc.text("DATE: _________________", pageWidth - margin - 50, y);
+    y += 15;
 
-    // 4. QUESTIONS LOOP
+    // Instructions
+    doc.setDrawColor(...primaryRGB);
+    doc.setLineWidth(0.5);
+    doc.roundedRect(margin, y, pageWidth - (margin * 2), 20, 2, 2);
+
+    doc.setTextColor(...primaryRGB);
+    doc.setFont("helvetica", "bold");
+    doc.text("INSTRUCTIONS", margin + 5, y + 8);
+
+    doc.setTextColor(0);
+    doc.setFont("helvetica", "normal");
+    doc.text(activity.student_worksheet.instructions, margin + 5, y + 16);
+    y += 30;
+
+    // Questions
     activity.student_worksheet.questions.forEach((q, i) => {
-      // Estimate space needed
       let space = 20;
       if (q.options) space += (q.options.length * 8);
       checkSpace(space);
 
-      // Styling: Number Circle
-      doc.setFillColor(...primaryColor);
-      doc.circle(margin + 2, y - 1.5, 4, 'F');
-      doc.setTextColor(255);
-      doc.setFontSize(9);
+      // Styling
+      doc.setTextColor(...primaryRGB);
       doc.setFont("helvetica", "bold");
-      doc.text(`${i + 1}`, margin + 2, y - 1.2, { align: 'center', baseline: 'middle' });
+      doc.text(`${i + 1}.`, margin, y);
 
-      // Question Text
       doc.setTextColor(0);
-      doc.setFontSize(11);
-      doc.setFont("helvetica", "bold");
-      const qLines = doc.splitTextToSize(q.question_text, pageWidth - margin - 30);
-      doc.text(qLines, margin + 12, y);
-      y += (qLines.length * 6) + 4;
+      const qLines = doc.splitTextToSize(q.question_text, pageWidth - margin - 25);
+      doc.text(qLines, margin + 10, y);
+      y += (qLines.length * 5) + 5;
 
-      // Render Options
       doc.setFont("helvetica", "normal");
       if (q.options && q.options.length > 0) {
         q.options.forEach(opt => {
-          checkSpace(10);
-          doc.setDrawColor(100);
-          doc.rect(margin + 12, y - 4, 4, 4); // Checkbox square
-          doc.text(opt, margin + 20, y);
-          y += 7;
+          checkSpace(8);
+          doc.text(`[   ]  ${opt}`, margin + 15, y);
+          y += 6;
         });
-      }
-      // Render True/False
-      else if (activityType === 'true_false') {
-        doc.setDrawColor(150);
-        doc.roundedRect(margin + 12, y - 5, 15, 8, 1, 1);
-        doc.text("TRUE", margin + 14, y);
-
-        doc.roundedRect(margin + 40, y - 5, 15, 8, 1, 1);
-        doc.text("FALSE", margin + 42, y);
+      } else if (activityType === 'true_false') {
+        doc.text("[ TRUE ]    [ FALSE ]", margin + 15, y);
+        y += 8;
+      } else {
+        doc.setDrawColor(200);
+        doc.line(margin + 10, y, pageWidth - margin, y);
         y += 10;
       }
-      // Render Writing Lines
-      else {
-        doc.setDrawColor(220); // Very light grey
-        doc.line(margin + 12, y, pageWidth - margin, y);
-        doc.line(margin + 12, y + 8, pageWidth - margin, y + 8);
-        y += 12;
-      }
 
-      // Hint (if Scaffolding is ON)
       if (q.hint && isScaffolded) {
         doc.setFontSize(9);
-        doc.setTextColor(...accentColor);
-        doc.text(`💡 Hint: ${q.hint}`, margin + 12, y - 2);
-        y += 4;
+        doc.setTextColor(100);
+        doc.text(`Hint: ${q.hint}`, margin + 15, y - 2);
+        doc.setFontSize(10);
+        doc.setTextColor(0);
       }
-
-      y += 8; // Spacer between questions
+      y += 5;
     });
 
-    // 5. VOCABULARY BANK (Bottom of Page)
-    if (activity.student_worksheet.glossary.length > 0) {
-      checkSpace(50);
-      y += 5;
-      doc.setDrawColor(...primaryColor);
-      doc.setLineWidth(0.5);
-      doc.line(margin, y, pageWidth - margin, y); // Separator line
-      y += 10;
-
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(12);
-      doc.setTextColor(...primaryColor);
-      doc.text("VOCABULARY BANK", margin, y);
-      y += 8;
-
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(10);
-      doc.setTextColor(50);
-
-      // Grid-like layout for vocab
-      activity.student_worksheet.glossary.forEach(g => {
-        checkSpace(8);
-        doc.setFont("helvetica", "bold");
-        doc.text(`• ${g.word}:`, margin, y);
-
-        doc.setFont("helvetica", "normal");
-        const defLines = doc.splitTextToSize(g.definition, pageWidth - margin - 60);
-        doc.text(defLines, margin + 40, y);
-        y += (defLines.length * 5) + 2;
-      });
-    }
-
-    // ==========================================
-    // PAGE 2: TEACHER'S VAULT (Answer Key)
-    // ==========================================
+    // --- TEACHER PAGE ---
     doc.addPage();
-    y = 20;
-
-    // Private Header
-    doc.setFillColor(30, 41, 59); // Dark Slate
+    doc.setFillColor(30);
     doc.rect(0, 0, pageWidth, 30, 'F');
     doc.setTextColor(255);
     doc.setFontSize(16);
-    doc.setFont("helvetica", "bold");
-    doc.text("Teacher's Guide & Answer Key", margin, 20);
+    doc.text("Teacher's Guide", margin, 20);
+
+    doc.setTextColor(0);
+    doc.setFontSize(12);
     y = 50;
-
-    // Rationale Section
-    doc.setTextColor(0);
-    doc.setFontSize(14);
-    doc.text("Methodology", margin, y);
-    y += 10;
-
+    doc.text("Rationale:", margin, y);
+    y += 7;
     doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(60);
-    const ratLines = doc.splitTextToSize(activity.teacher_guide.rationale, pageWidth - (margin * 2));
+    const ratLines = doc.splitTextToSize(activity.teacher_guide.rationale, pageWidth - margin * 2);
     doc.text(ratLines, margin, y);
-    y += (ratLines.length * 5) + 15;
+    y += (ratLines.length * 5) + 10;
 
-    // Answer Key Section
-    doc.setFontSize(14);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(0);
-    doc.text("Answer Key", margin, y);
-    y += 10;
-
+    doc.setFontSize(12);
+    doc.text("Answer Key:", margin, y);
+    y += 7;
+    doc.setFontSize(10);
     if (activity.teacher_guide.key_answers) {
-      doc.setFontSize(11);
-      doc.setFont("helvetica", "normal");
-      doc.setTextColor(0);
-      activity.teacher_guide.key_answers.forEach(ans => {
-        doc.text(`• ${ans}`, margin, y);
-        y += 8;
+      activity.teacher_guide.key_answers.forEach(k => {
+        doc.text(`• ${k}`, margin, y);
+        y += 6;
       });
     }
 
-    // Finalize with Footers
-    addFooters();
-    doc.save(`${activity.title.replace(/\s+/g, '_')}_Pro.pdf`);
+    doc.save("lesson_visual.pdf");
   };
 
-  // --- RENDER ---
+  // --- UI RENDER ---
   return (
     <div className="app-shell">
-
-      {/* 1. SIDEBAR (MEMORY) */}
       <aside className="sidebar">
-        <div className="brand">
-          <Layout /> LessonArchitect
-        </div>
-
+        <div className="brand"><Layout /> LessonArchitect</div>
         <div className="input-group" style={{ marginBottom: '20px' }}>
-          <label style={{ color: '#818cf8' }}>API Key</label>
-          <input
-            type="password"
-            value={apiKey}
-            onChange={e => setApiKey(e.target.value)}
-            style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid #4338ca', color: 'white' }}
-          />
+          <label style={{ color: '#a5b4fc' }}>API Key</label>
+          <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)}
+            style={{ background: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid #4338ca' }} />
         </div>
-
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <span style={{ fontSize: '0.8rem', fontWeight: 'bold', opacity: 0.7 }}>LESSON MEMORY</span>
-          <button onClick={clearHistory} style={{ background: 'none', border: 'none', color: '#fb7185', cursor: 'pointer' }}><Trash2 size={14} /></button>
-        </div>
-
         <div className="history-list">
-          {history.length === 0 && <div style={{ opacity: 0.5, fontSize: '0.9rem', fontStyle: 'italic' }}>No lessons yet...</div>}
+          <div style={{ color: '#a5b4fc', fontSize: '0.8rem', fontWeight: 'bold', marginBottom: '10px' }}>HISTORY</div>
           {history.map(item => (
             <div key={item.id} className="history-item" onClick={() => loadFromHistory(item)}>
-              <span className="history-title">{item.title}</span>
-              <div className="history-meta">{item.meta?.level} • {item.meta?.type}</div>
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                {item.visuals?.mascotUrl && <img src={item.visuals.mascotUrl} style={{ width: '30px', height: '30px', borderRadius: '4px', objectFit: 'cover' }} />}
+                <div>
+                  <span className="history-title">{item.title}</span>
+                  <div className="history-meta">{item.meta?.level}</div>
+                </div>
+              </div>
             </div>
           ))}
         </div>
+        <button onClick={clearHistory} style={{ marginTop: 'auto', background: 'none', border: 'none', color: '#fb7185', cursor: 'pointer', display: 'flex', gap: '5px', alignItems: 'center' }}><Trash2 size={14} /> Clear History</button>
       </aside>
 
-      {/* 2. MAIN WORKSPACE */}
       <main className="workspace">
-
-        {/* LEFT: EDITOR */}
         <div className="editor-panel">
-          <h2><Sparkles size={20} style={{ display: 'inline', color: '#4f46e5' }} /> New Lesson</h2>
+          <h2><Sparkles size={20} style={{ display: 'inline', color: themeColors.primary }} /> Creator Studio</h2>
 
           <div className="input-group">
-            <label>Source Material</label>
+            <label>Story / Topic</label>
             <textarea
-              placeholder="Paste your text here..."
+              placeholder="e.g. Peppa Pig goes to Italy and eats pizza..."
               value={transcript}
               onChange={e => setTranscript(e.target.value)}
             />
@@ -417,7 +354,6 @@ export default function App() {
                 <option value="comprehension">Comprehension</option>
                 <option value="vocabulary">Vocabulary</option>
                 <option value="grammar">Grammar</option>
-                <option value="true_false">True / False</option>
                 <option value="discussion">Discussion</option>
               </select>
             </div>
@@ -429,65 +365,60 @@ export default function App() {
             </div>
           </div>
 
-          <div
-            className={`toggle-box ${isScaffolded ? 'active' : ''}`}
-            onClick={() => setIsScaffolded(!isScaffolded)}
-          >
-            {isScaffolded ? <ToggleRight color="#10b981" size={24} /> : <ToggleLeft color="#9ca3af" size={24} />}
-            <div>
-              <div style={{ fontWeight: 600 }}>Scaffolding Mode</div>
-              <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>Auto-simplify & hints</div>
-            </div>
+          <div className={`toggle-box ${isScaffolded ? 'active' : ''}`} onClick={() => setIsScaffolded(!isScaffolded)}>
+            {isScaffolded ? <ToggleRight color={themeColors.primary} /> : <ToggleLeft color="#ccc" />}
+            <span>Scaffolding Mode</span>
           </div>
 
-          <button className="generate-btn" onClick={generateActivity} disabled={loading}>
-            {loading ? "Constructing..." : "Generate Lesson Plan"}
+          <button className="generate-btn" onClick={generateActivity} disabled={loading} style={{ background: themeColors.primary }}>
+            {loading ? "Designing & Illustrating..." : "Generate Magic Lesson"}
           </button>
         </div>
 
-        {/* RIGHT: LIVE PREVIEW */}
-        <div className="preview-panel">
+        <div className="preview-panel" style={{ background: '#f0f9ff' }}>
           {activity ? (
             <div className="paper">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
-                <div>
-                  <h1 style={{ margin: 0, fontSize: '1.8rem', color: '#111827' }}>{activity.title}</h1>
-                  <div style={{ color: '#6b7280', marginTop: '5px' }}>{activity.meta.level} | {activity.meta.type.toUpperCase()}</div>
+              {/* VISUAL HEADER PREVIEW */}
+              <div style={{
+                background: themeColors.primary,
+                padding: '20px', borderRadius: '8px 8px 0 0',
+                color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+              }}>
+                <div style={{ flex: 1 }}>
+                  <h1 style={{ margin: 0, fontSize: '1.5rem' }}>{activity.title}</h1>
+                  <div style={{ opacity: 0.8, fontSize: '0.9rem' }}>{activity.meta.level} • {activity.meta.type.toUpperCase()}</div>
                 </div>
-                <button onClick={downloadPDF} className="download-btn"><Download size={18} /> PDF</button>
+                {mascotUrl && (
+                  <img src={mascotUrl} alt="Mascot" style={{ width: '80px', height: '80px', borderRadius: '8px', border: '2px solid white', objectFit: 'cover' }} />
+                )}
               </div>
 
-              <hr style={{ borderColor: '#e5e7eb', margin: '20px 0' }} />
+              <div style={{ padding: '30px' }}>
+                <button onClick={downloadPDF} className="download-btn" style={{ width: '100%', marginBottom: '20px', background: '#1f2937' }}>
+                  <Printer size={18} /> Download Illustrated PDF
+                </button>
 
-              <div style={{ background: '#f8fafc', padding: '15px', borderRadius: '8px', marginBottom: '25px', borderLeft: '4px solid #4f46e5' }}>
-                <h4 style={{ margin: '0 0 5px 0', color: '#4f46e5' }}>Teacher Notes</h4>
-                <p style={{ margin: 0, fontSize: '0.9rem', color: '#334155' }}>{activity.teacher_guide.rationale}</p>
-              </div>
+                <div style={{ background: '#f9fafb', padding: '15px', borderRadius: '8px', borderLeft: `4px solid ${themeColors.primary}` }}>
+                  <strong>Instructions:</strong> {activity.student_worksheet.instructions}
+                </div>
 
-              <h3 style={{ borderBottom: '2px solid #e2e8f0', paddingBottom: '10px' }}>Student Worksheet</h3>
-              <p><em>{activity.student_worksheet.instructions}</em></p>
-
-              {activity.student_worksheet.questions.map((q, i) => (
-                <div key={i} style={{ marginBottom: '20px' }}>
-                  <div style={{ fontWeight: 600, marginBottom: '5px' }}>{i + 1}. {q.question_text}</div>
-                  {q.options && q.options.map(opt => (
-                    <div key={opt} style={{ marginLeft: '15px', color: '#475569' }}>☐ {opt}</div>
+                <div style={{ marginTop: '30px' }}>
+                  {activity.student_worksheet.questions.map((q, i) => (
+                    <div key={i} style={{ marginBottom: '15px', borderBottom: '1px dashed #eee', paddingBottom: '10px' }}>
+                      <div style={{ fontWeight: 'bold', color: themeColors.primary }}>{i + 1}. {q.question_text}</div>
+                      {q.options && q.options.map(opt => <div key={opt} style={{ marginLeft: '10px', fontSize: '0.9rem' }}>○ {opt}</div>)}
+                    </div>
                   ))}
-                  {q.hint && isScaffolded && (
-                    <div style={{ fontSize: '0.8rem', color: '#059669', marginTop: '4px' }}>💡 {q.hint}</div>
-                  )}
                 </div>
-              ))}
+              </div>
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#94a3b8' }}>
-              <FileText size={64} style={{ marginBottom: '20px', opacity: 0.2 }} />
-              <h3>Ready to build</h3>
-              <p>Select your inputs on the left to begin.</p>
+            <div style={{ textAlign: 'center', opacity: 0.3, marginTop: '100px' }}>
+              <Palette size={64} />
+              <h3>Visual Engine Ready</h3>
             </div>
           )}
         </div>
-
       </main>
     </div>
   );

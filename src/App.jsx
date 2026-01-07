@@ -47,7 +47,16 @@ const getCategoryBadge = (text) => {
 
 export default function App() {
   // --- STATE ---
-  const [apiKey, setApiKey] = useState(localStorage.getItem('gemini_key') || '');
+
+  // FIX: Lazy initialization with try/catch to prevent white screen crashes
+  const [apiKey, setApiKey] = useState(() => {
+    try {
+      return localStorage.getItem('gemini_key') || '';
+    } catch (e) {
+      console.warn("LocalStorage access denied", e);
+      return '';
+    }
+  });
   const [transcript, setTranscript] = useState('');
   const [activityType, setActivityType] = useState('comprehension');
   const [cefrLevel, setCefrLevel] = useState('B1');

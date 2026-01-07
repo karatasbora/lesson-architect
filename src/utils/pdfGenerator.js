@@ -20,7 +20,7 @@ export const generatePDF = async (activity, mascotUrl, isScaffolded) => {
     const doc = new jsPDF();
     const width = doc.internal.pageSize.getWidth();
     const height = doc.internal.pageSize.getHeight();
-    constQm = 20; // margin
+    const Qm = 20; // margin
 
     // Layout Constants
     const sidebarW = (width - (Qm * 2)) * 0.30;

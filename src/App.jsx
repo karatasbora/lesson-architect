@@ -4,23 +4,29 @@ import { jsPDF } from "jspdf";
 import {
   Layout, Sparkles, Trash2, ToggleLeft, ToggleRight,
   Printer, Image as ImageIcon, Lightbulb, MapPin,
-  Clock, User, HelpCircle, Utensils, Download
+  Clock, User, HelpCircle, Utensils, Download, AlertTriangle
 } from 'lucide-react';
 
 // --- HELPERS ---
 
 const getBase64FromUrl = async (url) => {
-  const data = await fetch(url);
-  const blob = await data.blob();
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(blob);
-    reader.onloadend = () => resolve(reader.result);
-  });
+  try {
+    const data = await fetch(url);
+    const blob = await data.blob();
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(blob);
+      reader.onloadend = () => resolve(reader.result);
+    });
+  } catch (e) {
+    console.error("Image load failed", e);
+    return null;
+  }
 };
 
-// Keyword Detector for Visual Cues
+// Keyword Detector for Visual Cues (Safe Version)
 const getCategoryBadge = (text) => {
+  if (!text) return { label: "DETAIL", icon: <HelpCircle size={12} />, color: "bg-slate-100 text-slate-700" };
   const lower = text.toLowerCase();
   if (lower.includes('where') || lower.includes('place') || lower.includes('go')) return { label: "LOCATION", icon: <MapPin size={12} />, color: "bg-blue-100 text-blue-700" };
   if (lower.includes('who')) return { label: "CHARACTER", icon: <User size={12} />, color: "bg-purple-100 text-purple-700" };
@@ -46,10 +52,17 @@ export default function App() {
   const [mascotUrl, setMascotUrl] = useState(null);
   const [themeColors, setThemeColors] = useState({ primary: '#4f46e5', accent: '#10b981' });
 
-  // Load History
+  // Load History Safely
   useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem('lesson_history') || '[]');
-    setHistory(saved);
+    try {
+      const saved = JSON.parse(localStorage.getItem('lesson_history') || '[]');
+      if (Array.isArray(saved)) {
+        setHistory(saved);
+      }
+    } catch (e) {
+      console.error("History corrupted, clearing", e);
+      localStorage.setItem('lesson_history', '[]');
+    }
   }, []);
 
   // Save Key
@@ -71,20 +84,26 @@ export default function App() {
   };
 
   const loadFromHistory = (item) => {
+    // Safety check before loading
+    if (!item || !item.student_worksheet) {
+      alert("This saved lesson is corrupt or from an old version.");
+      return;
+    }
     setActivity(item);
     if (item.visuals) {
       setMascotUrl(item.visuals.mascotUrl);
-      setThemeColors(item.visuals.themeColors);
+      setThemeColors(item.visuals.themeColors || { primary: '#4f46e5' });
     }
     if (item.meta) {
-      setCefrLevel(item.meta.level);
-      setActivityType(item.meta.type);
+      setCefrLevel(item.meta.level || 'B1');
+      setActivityType(item.meta.type || 'comprehension');
     }
   };
 
   const clearHistory = () => {
-    if (confirm("Clear all saved lessons?")) {
+    if (confirm("Clear all saved lessons? This fixes 'White Screen' errors caused by old data.")) {
       setHistory([]);
+      setActivity(null);
       localStorage.setItem('lesson_history', '[]');
     }
   };
@@ -147,15 +166,17 @@ export default function App() {
       const text = result.response.text().replace(/```json/g, '').replace(/```/g, '').trim();
       const data = JSON.parse(text);
 
+      if (!data.student_worksheet) throw new Error("Invalid AI response structure");
+
       setActivity(data);
-      setThemeColors({ primary: data.visual_theme.primary_color, accent: '#4b5563' });
+      setThemeColors({ primary: data.visual_theme?.primary_color || '#4f46e5', accent: '#4b5563' });
 
       // Image Gen
-      const promptEncoded = encodeURIComponent(data.visual_theme.mascot_prompt + " white background, high quality, vector style, flat illustration");
+      const promptEncoded = encodeURIComponent((data.visual_theme?.mascot_prompt || "school mascot") + " white background, high quality, vector style, flat illustration");
       const imageUrl = `https://image.pollinations.ai/prompt/${promptEncoded}?width=400&height=400&nologo=true&seed=${Math.floor(Math.random() * 1000)}`;
 
       setMascotUrl(imageUrl);
-      addToHistory(data, { mascotUrl: imageUrl, themeColors: { primary: data.visual_theme.primary_color } });
+      addToHistory(data, { mascotUrl: imageUrl, themeColors: { primary: data.visual_theme?.primary_color } });
 
     } catch (err) {
       alert("Error: " + err.message);
@@ -254,6 +275,7 @@ export default function App() {
 
     // Helper for badges in PDF (Simplified text version)
     const getPdfBadge = (text) => {
+      if (!text) return "DETAIL";
       const lower = text.toLowerCase();
       if (lower.includes('where') || lower.includes('place')) return "LOCATION";
       if (lower.includes('who')) return "CHARACTER";
@@ -271,15 +293,17 @@ export default function App() {
     doc.text(activity.title, margin, 18);
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    doc.text(`${activity.meta.level} LEVEL  •  ${activity.meta.type.toUpperCase()}`, margin, 28);
+    doc.text(`${activity.meta?.level || 'A1'} LEVEL  •  ${(activity.meta?.type || 'LESSON').toUpperCase()}`, margin, 28);
 
     if (mascotUrl) {
       try {
         const base64Img = await getBase64FromUrl(mascotUrl);
-        doc.setDrawColor(255);
-        doc.setLineWidth(2);
-        doc.circle(width - 30, 20, 16, 'S');
-        doc.addImage(base64Img, 'JPEG', width - 42, 8, 24, 24);
+        if (base64Img) {
+          doc.setDrawColor(255);
+          doc.setLineWidth(2);
+          doc.circle(width - 30, 20, 16, 'S');
+          doc.addImage(base64Img, 'JPEG', width - 42, 8, 24, 24);
+        }
       } catch (e) { console.error(e); }
     }
 
@@ -415,16 +439,18 @@ export default function App() {
           {history.map(item => (
             <div key={item.id} className="history-item" onClick={() => loadFromHistory(item)}>
               <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                {/* SAFE GUARD: Check visuals existence */}
                 {item.visuals?.mascotUrl && <img src={item.visuals.mascotUrl} style={{ width: '30px', height: '30px', borderRadius: '4px', objectFit: 'cover' }} />}
                 <div>
                   <span className="history-title">{item.title}</span>
+                  {/* SAFE GUARD: Optional Chaining */}
                   <div className="history-meta">{item.meta?.level}</div>
                 </div>
               </div>
             </div>
           ))}
         </div>
-        <button onClick={clearHistory} style={{ marginTop: 'auto', background: 'none', border: 'none', color: '#fb7185', cursor: 'pointer', display: 'flex', gap: '5px', alignItems: 'center' }}><Trash2 size={14} /> Clear History</button>
+        <button onClick={clearHistory} style={{ marginTop: 'auto', background: 'none', border: 'none', color: '#fb7185', cursor: 'pointer', display: 'flex', gap: '5px', alignItems: 'center' }}><Trash2 size={14} /> Clear / Reset App</button>
       </aside>
 
       <main className="workspace">
@@ -484,8 +510,8 @@ export default function App() {
                   <div style={{ background: themeColors.primary, margin: '-40px -40px 30px -40px', padding: '40px', color: 'white' }}>
                     <h1 style={{ margin: 0, fontSize: '2rem' }}>{activity.title}</h1>
                     <div style={{ marginTop: '10px', opacity: 0.9, fontSize: '0.9rem', display: 'flex', gap: '15px' }}>
-                      <span style={{ background: 'rgba(255,255,255,0.2)', padding: '4px 10px', borderRadius: '20px' }}>{activity.meta.level}</span>
-                      <span style={{ background: 'rgba(255,255,255,0.2)', padding: '4px 10px', borderRadius: '20px' }}>{activity.meta.type.toUpperCase()}</span>
+                      <span style={{ background: 'rgba(255,255,255,0.2)', padding: '4px 10px', borderRadius: '20px' }}>{activity.meta?.level}</span>
+                      <span style={{ background: 'rgba(255,255,255,0.2)', padding: '4px 10px', borderRadius: '20px' }}>{activity.meta?.type?.toUpperCase()}</span>
                       <span style={{ background: 'rgba(255,255,255,0.2)', padding: '4px 10px', borderRadius: '20px' }}>20 MIN</span>
                     </div>
                   </div>
@@ -493,12 +519,12 @@ export default function App() {
                   {/* INSTRUCTIONS */}
                   <div style={{ background: '#f8fafc', padding: '20px', borderRadius: '8px', borderLeft: `4px solid ${themeColors.primary}`, marginBottom: '30px' }}>
                     <div style={{ color: themeColors.primary, fontWeight: 'bold', fontSize: '0.8rem', marginBottom: '5px' }}>INSTRUCTIONS</div>
-                    <div style={{ color: '#334155' }}>{activity.student_worksheet.instructions}</div>
+                    <div style={{ color: '#334155' }}>{activity.student_worksheet?.instructions}</div>
                   </div>
 
                   {/* QUESTIONS */}
                   <div className="questions-list">
-                    {activity.student_worksheet.questions.map((q, i) => {
+                    {activity.student_worksheet?.questions?.map((q, i) => {
                       const badge = getCategoryBadge(q.question_text);
                       return (
                         <div key={i} style={{ marginBottom: '25px' }}>
@@ -552,7 +578,7 @@ export default function App() {
                 {/* --- RIGHT: SIDEBAR (ACTION & ASSETS) --- */}
                 <div className="paper-sidebar" style={{ background: '#f8fafc', padding: '30px' }}>
 
-                  {/* --- DOWNLOAD ACTION CARD (MOVED HERE) --- */}
+                  {/* --- DOWNLOAD ACTION --- */}
                   <div style={{ marginBottom: '30px' }}>
                     <button onClick={downloadPDF} className="download-btn" style={{
                       width: '100%', padding: '15px', background: '#0f172a', color: 'white',
@@ -579,7 +605,7 @@ export default function App() {
                   )}
 
                   {/* GLOSSARY */}
-                  {activity.student_worksheet.glossary && (
+                  {activity.student_worksheet?.glossary && (
                     <div style={{ marginBottom: '30px' }}>
                       <h4 style={{
                         fontSize: '0.8rem', textTransform: 'uppercase', color: themeColors.primary,

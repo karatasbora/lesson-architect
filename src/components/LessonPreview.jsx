@@ -16,14 +16,14 @@ export default function LessonPreview({ activity, mascotUrl, isScaffolded, onDow
     if (!activity) {
         return (
             <div className="preview-panel">
-                <div className="flex-column-center" style={{ height: '100%', opacity: 0.6, color: '#a1a1aa' }}>
+                <div className="flex-column-center" style={{ height: '100%', opacity: 0.6, color: 'var(--zinc-400)' }}>
                     <div className="flex-column-center shadow-soft" style={{
                         background: 'white', padding: '30px', borderRadius: '50%',
-                        marginBottom: '20px'
+                        marginBottom: '20px', boxShadow: 'var(--shadow-md)'
                     }}>
-                        <Palette size={48} strokeWidth={1} color="#000" />
+                        <Palette size={48} strokeWidth={1} color="var(--zinc-900)" />
                     </div>
-                    <h3 style={{ fontSize: '1.2rem', color: '#18181b', marginBottom: '8px', fontWeight: 600 }}>Start Your Blueprint</h3>
+                    <h3 style={{ fontSize: '1.2rem', color: 'var(--zinc-900)', marginBottom: '8px', fontWeight: 600 }}>Start Your Blueprint</h3>
                     <p style={{ maxWidth: '300px', textAlign: 'center', fontSize: '0.9rem' }}>
                         Configure the lesson parameters and click Generate to construct a new lesson plan.
                     </p>

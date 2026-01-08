@@ -16,12 +16,12 @@ export default function ConfigPanel({
     return (
         <div className="editor-panel">
             <div className="panel-header">
-                <div style={{ background: '#f4f4f5', padding: '8px', borderRadius: '8px' }}>
+                <div style={{ background: 'white', padding: '8px', borderRadius: '8px', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
                     <Command size={20} className="text-zinc-900" />
                 </div>
                 <div>
                     <h2 className="panel-title">Configuration</h2>
-                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Customize your lesson parameters</p>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--cf-text-muted)' }}>Customize your lesson parameters</p>
                 </div>
             </div>
 

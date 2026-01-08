@@ -17,7 +17,7 @@ export default function Sidebar({ apiKey, setApiKey, history, loadFromHistory, c
             </div>
 
             <div className="input-wrapper" style={{ marginBottom: '2rem' }}>
-                <label className="input-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <label className="input-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--sb-text-muted)' }}>
                     <Key size={12} className="text-zinc-400" /> API Key
                 </label>
                 <input
@@ -26,7 +26,7 @@ export default function Sidebar({ apiKey, setApiKey, history, loadFromHistory, c
                     value={apiKey}
                     onChange={e => setApiKey(e.target.value)}
                     placeholder="sk-..."
-                    style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}
+                    style={{ fontFamily: 'monospace', fontSize: '0.8rem', background: 'var(--sb-hover)', border: '1px solid var(--sb-border)', color: 'var(--sb-text-main)' }}
                 />
             </div>
 
@@ -34,7 +34,8 @@ export default function Sidebar({ apiKey, setApiKey, history, loadFromHistory, c
             <div className="history-list">
                 <div style={{
                     fontSize: '0.7rem', fontWeight: '600', marginBottom: '10px',
-                    textTransform: 'uppercase', letterSpacing: '0.05em', opacity: 0.6
+                    textTransform: 'uppercase', letterSpacing: '0.05em', opacity: 0.6,
+                    color: 'var(--sb-text-muted)'
                 }}>
                     Library
                 </div>

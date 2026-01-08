@@ -449,6 +449,14 @@ select.input-field {
   font-size: 0.75rem;
   font-weight: 600;
   background: var(--bg-surface);
+  background: var(--bg-surface);
   color: var(--text-main);
   border: 1px solid var(--border);
+}
+
+.flex-column-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }

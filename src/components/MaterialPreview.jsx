@@ -25,7 +25,7 @@ export default function MaterialPreview({ activity, mascotUrl, isScaffolded, onD
                     </div>
                     <h3 style={{ fontSize: '1.2rem', color: 'var(--zinc-900)', marginBottom: '8px', fontWeight: 600 }}>Start Your Blueprint</h3>
                     <p style={{ maxWidth: '300px', textAlign: 'center', fontSize: '0.9rem' }}>
-                        Configure the material parameters and click Generate to construct a new lesson plan.
+                        Configure the material parameters and click Generate to construct a new material plan.
                     </p>
                 </div>
             </div>

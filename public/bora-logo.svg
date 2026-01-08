@@ -1,9 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="-5 -5 110 110">
     <rect x="-5" y="-5" width="110" height="110" fill="#e4e4e7" rx="15" />
     <!-- Left Bar: Width 62 (Golden Ratio Major) -->
-    <path d="M 12 0 L 62 0 L 62 100 L 12 100 A 12 12 0 0 1 0 88 L 0 12 A 12 12 0 0 1 12 0 Z" fill="#2C3E50"/>
+    <path d="M 12 0 L 61.8 0 L 61.8 100 L 12 100 A 12 12 0 0 1 0 88 L 0 12 A 12 12 0 0 1 12 0 Z" fill="#2C3E50" stroke="#e4e4e7" stroke-width="6"/>
     <!-- Top Right: Height 62 (Golden Ratio Major) -->
-    <path d="M 66 0 L 88 0 A 12 12 0 0 1 100 12 L 100 62 L 66 62 Z" fill="#6C5CE7"/>
+    <path d="M 65.8 0 L 88 0 A 12 12 0 0 1 100 12 L 100 61.8 L 65.8 61.8 Z" fill="#6C5CE7" stroke="#e4e4e7" stroke-width="6"/>
     <!-- Bottom Right: Height 34 (Golden Ratio Minor) -->
-    <path d="M 66 66 L 100 66 L 100 88 A 12 12 0 0 1 88 100 L 66 100 Z" fill="#6C5CE7"/>
+    <path d="M 65.8 65.8 L 100 65.8 L 100 88 A 12 12 0 0 1 88 100 L 65.8 100 Z" fill="#6C5CE7" stroke="#e4e4e7" stroke-width="6"/>
 </svg>

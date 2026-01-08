@@ -59,10 +59,16 @@ export default function Sidebar({ apiKey, setApiKey, history, loadFromHistory, c
                 <Trash2 size={14} /> Clear History
             </button>
 
-            <div className="sidebar-footer">
+            <a
+                href="https://karatasbora.github.io/resume"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="sidebar-footer"
+                style={{ textDecoration: 'none' }}
+            >
                 <img src={`${baseUrl}bora-logo.svg`} alt="Bora Karataş" className="dev-logo" />
                 <span className="dev-name">Bora Karataş</span>
-            </div>
+            </a>
         </aside>
     );
 }

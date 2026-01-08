@@ -496,6 +496,9 @@ select.input-field {
   color: var(--sb-text-muted);
   opacity: 0.8;
   transition: opacity 0.2s;
+  text-decoration: none;
+  /* Ensure no underline */
+  cursor: pointer;
 }
 
 .sidebar-footer:hover {
@@ -503,12 +506,9 @@ select.input-field {
 }
 
 .dev-logo {
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   border-radius: 4px;
-  background-color: #e4e4e7;
-  /* Zinc-200 for softer contrast than pure white */
-  padding: 2px;
 }
 
 .dev-name {

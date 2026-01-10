@@ -1,0 +1,7 @@
+<svg width="1280" height="720" viewBox="0 0 1280 720" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1280" height="720" fill="#18181b"/>
+  <g transform="translate(256, 104) scale(16)">
+    <text x="14.35" y="22" font-family="'Inter', sans-serif" font-weight="700" font-size="17.3" letter-spacing="-0.04em" fill="#fafafa">arc</text>
+    <path fill="#6366f1" transform="translate(3.65, 5)" d="M 30.000 5.180 C 20.950 -4.820 5.500 5.410 2.000 26.810 L 8.610 18.400 C 10.720 9.090 22.030 -0.290 30.000 5.180 Z"/>
+  </g>
+</svg>

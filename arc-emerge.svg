@@ -1,0 +1,20 @@
+<svg width="48" height="32" viewBox="0 0 48 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- 
+    Concept: "Emerging"
+    Layer 1 (Back): Text "arc"
+    Centered Whole Shape:
+    Total Width ~36.7. Viewbox 48. Start X ~5.65.
+    Icon Actual X Start: 3.65 + 2 = 5.65. So Trans X = 3.65.
+    Text X: 5.65 + 10.35 (Overlap Offset) -> 14.35?
+    Check Previous: Text X was 12.35 when Icon Trans X was 1.65. Diff = 10.7.
+    New Text X: 3.65 + 10.7 = 14.35.
+    Y: 22
+  -->
+  <text x="14.35" y="22" font-family="'Inter', sans-serif" font-weight="700" font-size="17.3" letter-spacing="-0.04em" fill="#fafafa">arc</text>
+
+  <!-- 
+    Layer 2 (Front): Icon (Perfect Arc) 
+    Shifted X+3.65, Y+5
+  -->
+  <path fill="#6366f1" transform="translate(3.65, 5)" d="M 30.000 5.180 C 20.950 -4.820 5.500 5.410 2.000 26.810 L 8.610 18.400 C 10.720 9.090 22.030 -0.290 30.000 5.180 Z"/>
+</svg>
